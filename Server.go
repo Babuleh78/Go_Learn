@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 )
 
@@ -23,7 +24,9 @@ func (u User) getAllInfo() string {
 func home_page(page http.ResponseWriter, r *http.Request) {
 	bob := User{"Babuleh", 18, -1000, 5.0, 1.0}
 	// fmt.Fprintf(page, "User name is "+bob.name)
-	fmt.Fprint(page, bob.getAllInfo())
+	//fmt.Fprint(page, `<b> Main Text </b> <h1> Main Text</h1>`)
+	tmpl, _ := template.ParseFiles("templates/home_page.html")
+	tmpl.Execute(page, bob)
 }
 
 func babuleh_page(w http.ResponseWriter, r *http.Request) {
