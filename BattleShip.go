@@ -1,0 +1,85 @@
+package main
+
+import (
+    "log"
+    "net/http"
+    "github.com/gorilla/websocket"
+    "html/template"
+    "sync"
+)
+
+// Создаем структуру для хранения соединений
+var clients = make(map[*websocket.Conn]bool) // клиенты
+var broadcasts = make(chan Message)           // сообщения для отправки
+var mu sync.Mutex                             // мьютекс для защиты доступа к clients
+
+// Сообщение
+type Message struct {
+    Text string `json:"text"`
+}
+
+// Устанавливаем обработчик для WebSocket соединений
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool {
+        return true
+    },
+}
+
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+    conn, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    defer conn.Close()
+
+    mu.Lock()
+    clients[conn] = true
+    mu.Unlock()
+
+    for {
+        var msg Message
+        err := conn.ReadJSON(&msg)
+        if err != nil {
+            log.Println(err)
+            mu.Lock()
+            delete(clients, conn)
+            mu.Unlock()
+            break
+        }
+        broadcasts <- msg
+    }
+}
+
+
+
+// Функция для отправки сообщений всем клиентам
+func handleMessages() {
+    for {
+        msg := <-broadcasts
+        mu.Lock()
+        for client := range clients {
+            err := client.WriteJSON(msg)
+            if err != nil {
+                log.Println(err)
+                client.Close()
+                delete(clients, client)
+            }
+        }
+        mu.Unlock()
+    }
+}
+
+// Главная страница
+func serveHome(w http.ResponseWriter, r *http.Request) {
+    tmpl := template.Must(template.ParseFiles("templates/index.html"))
+    tmpl.Execute(w, nil)
+}
+
+func main() {
+    go handleMessages()
+
+    http.HandleFunc("/", serveHome)
+    http.HandleFunc("/ws", handleConnections)
+    http.ListenAndServe(":8080", nil)
+}
