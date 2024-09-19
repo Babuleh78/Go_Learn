@@ -1,16 +1,16 @@
 package main
 
 import (
+    "html/template"
     "log"
     "net/http"
-    "github.com/gorilla/websocket"
-    "html/template"
     "sync"
+
+    "github.com/gorilla/websocket"
 )
 
-// Создаем структуру для хранения соединений
-var clients = make(map[*websocket.Conn]bool) // клиенты
-var broadcasts = make(chan Message)           // сообщения для отправки
+var clients = make(map[*websocket.Conn]bool) // подключенные клиенты
+var broadcasts = make(chan Message)           // канал для отправки сообщений
 var mu sync.Mutex                             // мьютекс для защиты доступа к clients
 
 // Сообщение
@@ -18,17 +18,18 @@ type Message struct {
     Text string `json:"text"`
 }
 
-// Устанавливаем обработчик для WebSocket соединений
+// WebSocket соединения
 var upgrader = websocket.Upgrader{
     CheckOrigin: func(r *http.Request) bool {
         return true
     },
 }
 
+// Обработка WebSocket соединений
 func handleConnections(w http.ResponseWriter, r *http.Request) {
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
-        log.Println(err)
+        log.Println("Ошибка при подключении:", err)
         return
     }
     defer conn.Close()
@@ -41,7 +42,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
         var msg Message
         err := conn.ReadJSON(&msg)
         if err != nil {
-            log.Println(err)
+            log.Println("Ошибка при чтении JSON:", err)
             mu.Lock()
             delete(clients, conn)
             mu.Unlock()
@@ -51,9 +52,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
     }
 }
 
-
-
-// Функция для отправки сообщений всем клиентам
+// Отправка сообщений всем подключенным клиентам
 func handleMessages() {
     for {
         msg := <-broadcasts
@@ -61,7 +60,7 @@ func handleMessages() {
         for client := range clients {
             err := client.WriteJSON(msg)
             if err != nil {
-                log.Println(err)
+                log.Println("Ошибка при отправке JSON:", err)
                 client.Close()
                 delete(clients, client)
             }
@@ -81,5 +80,6 @@ func main() {
 
     http.HandleFunc("/", serveHome)
     http.HandleFunc("/ws", handleConnections)
+    log.Println("Сервер запущен на :8080")
     http.ListenAndServe(":8080", nil)
 }
