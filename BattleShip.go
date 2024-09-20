@@ -76,9 +76,14 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	go handleMessages()
+	// go handleMessages()
 
-	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", handleConnections)
+	// http.HandleFunc("/", serveHome)
+	// http.HandleFunc("/ws", handleConnections)
+	// http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "templates/kletki.html")
+	})
+
 	http.ListenAndServe(":8080", nil)
 }
