@@ -16,9 +16,19 @@
     <ul id="messages"></ul>
     <input id="messageInput" placeholder="Введите сообщение..." autocomplete="off" />
     <button id="sendMessage">Отправить</button>
+    <button class="color-button single-click" id="single-click">Нажми меня!</button>
 
     <script>
-        const conn = new WebSocket(`ws://${window.location.host}/ws`);
+        const button = document.getElementById('single-click');
+        button.addEventListener('click', () => {
+            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            button.style.backgroundColor = randomColor;
+            button.disabled = true;
+        });
+    </script>
+    
+    <script>
+    const conn = new WebSocket(`ws://${window.location.host}/ws`);
         const messages = document.getElementById("messages");
         const messageInput = document.getElementById("messageInput");
         const sendMessageButton = document.getElementById("sendMessage");
@@ -35,6 +45,6 @@ sendMessageButton.onclick = function() {
     conn.send(JSON.stringify(msg));
     messageInput.value = ""; // очищаем поле ввода
 };
-</script>
+</script> <!-- Подключение внешнего файла -->
 </body>
 </html>
