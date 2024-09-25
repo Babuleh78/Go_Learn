@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "Babuleh.sso.v1;ssov1";
+
+service Auth{
+    rpc Register (RegisterRequest) returns (RegisterResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc IsAdmin (IsAdminRequest) returns (IsAdminResponce);
+}
+
+message RegisterRequest{
+    string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse{
+    int64 user_id = 1;
+}
+
+message LoginRequest{
+    string login = 1;
+    string password = 2;
+    int32 app_id = 3;
+}
+
+message LoginResponse{
+    string token =1;
+}
+
+message IsAdminRequest{
+    int64 admin_id = 1;
+}
+
+message IsAdminResponce{
+    bool is_admin = 1;
+}
