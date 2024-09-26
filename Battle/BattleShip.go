@@ -71,7 +71,7 @@ func handleMessages() {
 
 // Главная страница
 func serveHome(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("templates/index.html"))
+	tmpl := template.Must(template.ParseFiles("index.html"))
 	tmpl.Execute(w, nil)
 }
 
@@ -81,8 +81,11 @@ func main() {
 	// http.HandleFunc("/", serveHome)
 	// http.HandleFunc("/ws", handleConnections)
 	// http.ListenAndServe(":8080", nil)
+	//http.HandleFunc("/", serveHome)
+	http.HandleFunc("/ws", handleConnections)
+	http.Handle("/JS/", http.StripPrefix("/JS/", http.FileServer(http.Dir("./JS/"))))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "templates/kletki.html")
+		http.ServeFile(w, r, "kletki.html")
 	})
 
 	http.ListenAndServe(":8080", nil)
